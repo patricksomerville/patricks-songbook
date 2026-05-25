@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patrick's Songbook - Fake Book & Teleprompter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rock+Salt&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --fg: #f0f0f0;
+            --accent: #ff3333;
+            --chord: #ffaa00;
+            --dim: #666;
+            --panel: #1a1a1a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* INDEX PAGE */
+        .index-header {
+            padding: 2rem;
+            border-bottom: 4px solid var(--accent);
+            text-align: center;
+        }
+        
+        .index-header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 3rem;
+            color: var(--fg);
+            letter-spacing: 2px;
+        }
+        
+        .index-header p {
+            color: var(--dim);
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .song-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .song-card {
+            background: var(--panel);
+            border: 2px solid #333;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .song-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(255, 51, 51, 0.2);
+        }
+        
+        .song-card .title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.4rem;
+            color: var(--fg);
+            margin-bottom: 0.5rem;
+        }
+        
+        .song-card .meta {
+            color: var(--dim);
+            font-size: 0.9rem;
+        }
+        
+        .song-card .key {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--bg);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* TELEPROMPTER PAGE */
+        .teleprompter {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+        
+        .teleprompter.active {
+            display: flex;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            border-top: 3px solid var(--accent);
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn {
+            background: var(--panel);
+            border: 2px solid var(--dim);
+            color: var(--fg);
+            padding: 0.8rem 1.5rem;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            border-color: var(--accent);
+            background: #222;
+        }
+        
+        .control-btn.primary {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: var(--bg);
+        }
+        
+        .speed-display {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.5rem;
+            color: var(--chord);
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .scroll-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            padding: 2rem;
+            padding-bottom: 120px;
+        }
+        
+        .scroll-content {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 3rem;
+            line-height: 1.8;
+            color: var(--fg);
+            white-space: pre-wrap;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            will-change: transform;
+        }
+        
+        .scroll-content .chord-line {
+            color: var(--chord);
+            font-weight: bold;
+            font-size: 0.85em;
+            line-height: 1.2;
+            margin-bottom: 0.1em;
+            white-space: pre;
+            font-family: 'Courier Prime', monospace;
+        }
+        
+        .scroll-content .lyric-line {
+            white-space: pre;
+            margin-bottom: 0.8em;
+            display: block;
+        }
+        
+        .scroll-content .chord-inline {
+            color: var(--chord);
+            font-weight: bold;
+            display: inline;
+        }
+        
+        .scroll-content .section-label {
+            color: var(--accent);
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 1.5em;
+            display: block;
+        }
+        
+        .scroll-content .chord {
+            color: var(--chord);
+            font-weight: bold;
+        }
+        
+        .song-info {
+            text-align: center;
+            padding: 2rem;
+            border-bottom: 2px solid var(--accent);
+            margin-bottom: 2rem;
+        }
+        
+        .song-info h2 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .song-info .subtitle {
+            color: var(--dim);
+            font-size: 1.2rem;
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            background: var(--panel);
+            border: 2px solid var(--dim);
+            color: var(--fg);
+            padding: 0.5rem 1rem;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            z-index: 100;
+        }
+        
+        .back-btn:hover {
+            border-color: var(--accent);
+        }
+        
+        .size-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .scroll-content { font-size: 2rem; }
+            .index-header h1 { font-size: 2rem; }
+            .controls { flex-wrap: wrap; gap: 0.5rem; }
+            .control-btn { padding: 0.5rem 1rem; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- INDEX PAGE -->
+    <div id="index" class="index-page">
+        <div class="index-header">
+            <h1>PATRICK'S SONGBOOK</h1>
+            <p>38 Songs | Folk, Blues & Traditional | Click to open teleprompter</p>
+        </div>
+        <div class="song-grid" id="songGrid"></div>
+    </div>
+    
+    <!-- TELEPROMPTER PAGE -->
+    <div id="teleprompter" class="teleprompter">
+        <button class="back-btn" onclick="showIndex()">← BACK</button>
+        
+        <div class="scroll-container" id="scrollContainer">
+            <div class="song-info" id="songInfo"></div>
+            <div class="scroll-content" id="scrollContent"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="size-controls">
+                <button class="control-btn" onclick="changeSize(-0.2)">A-</button>
+                <button class="control-btn" onclick="changeSize(0.2)">A+</button>
+            </div>
+            <button class="control-btn" onclick="adjustSpeed(-1)">SLOWER</button>
+            <span class="speed-display" id="speedDisplay">5</span>
+            <button class="control-btn" onclick="adjustSpeed(1)">FASTER</button>
+            <button class="control-btn primary" id="playBtn" onclick="togglePlay()">PLAY</button>
+            <button class="control-btn" onclick="resetScroll()">TOP</button>
+        </div>
+    </div>
+
+    <script>
+        // ========================
+        // SONG DATA
+        // ========================
+        const songs = [
+            {
+                title: "Hand Me Down My Walkin Cane",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "riseup",
+                content: `       G
+Hand me down my walkin cane
+    D7              G
+Hand me down my walkin cane
+       C
+Hand me down my walkin cane
+    G              D7           G
+I'll be gone on the midnight train
+    D7              G
+All my sins are taken away
+
+       G
+Hand me down my bottle of corn
+    D7              G
+I'll get drunk just as sure as I'm born
+       C
+Oh I got drunk and I landed in jail
+    G              D7           G
+There was no one to throw my bail
+    D7              G
+All my sins are taken away`
+            },
+            {
+                title: "The Midnight Special",
+                artist: "Lead Belly / Traditional",
+                key: "G",
+                capo: "2nd fret",
+                format: "riseup",
+                content: `       G
+Yonder come Miss Rosie
+    C
+How in the world do you know?
+    G
+Well I know her by the apron
+      D7              G
+And the dress she wore
+
+    C
+Umbrella on her shoulder
+         G
+Piece of paper in her hand
+        D7              G
+I'm gonna ask the governor
+     D7              G
+To turn lose my man
+
+[CHORUS]
+    C
+Let the midnight special
+       G
+Shine the light on me
+       D7
+Let the midnight special
+          G
+Shine the ever loving light on me`
+            },
+            {
+                title: "Take This Hammer",
+                artist: "Traditional",
+                key: "D",
+                capo: null,
+                format: "inline",
+                content: `[D]Take this hammer, carry it to the [A]captain,
+[A7]Take this hammer, carry it to the [D]captain,
+[D]Take this hammer, carry it to the [G]captain,
+[G7]Tell him I'm [D]gone.
+
+[D]Tell him I'm gone, tell him I'm [A]goin'
+[A7]Tell him I'm gone, tell him I'm [D]goin'
+[D]Tell him I'm gone, tell him I'm [G]goin'
+[G7]Tell him I'm [D]gone.`
+            },
+            {
+                title: "No More Cane",
+                artist: "Traditional",
+                key: "D",
+                capo: null,
+                format: "inline",
+                content: `[D]No more cane on the [G] Brazos,
+Oh, [D]no more cane on the [A7]Brazos,
+[D]No more cane on the [G]Brazos,
+Oh, [D]let all that [A7]cane grow [D]down.
+
+[D]I've done all I [G]can do,
+[D]Done all I can [A7]do,
+[D]I've done all I [G]can do,
+[D]To get my [A7]poor body [D]through.
+
+[D]No more [G]driver's lash for me,
+[D]No more [A7]driver's lash for me,
+[D]No more [G]driver's lash for me,
+[D]Many thousand [A7] years a[D]go.`
+            },
+            {
+                title: "Folsom Prison Blues",
+                artist: "Johnny Cash",
+                key: "E",
+                capo: "1st fret",
+                format: "inline",
+                content: `[E]I hear the train a-comin', it's rollin' 'round the bend,
+[E]And I ain't seen the sunshine since I don't know when,
+I'm [A]stuck in Folsom Prison, and time keeps draggin' [E]on,
+But that [B7]train keeps a-rollin', on down to [A]San An[E]tone.
+
+[E]When I was just a baby, my mama told me, "Son,
+[E]Always be a good boy, don't ever play with guns,"
+But I [A]shot a man in Reno, just to watch him [E]die,
+When I [B7]hear that whistle blowin', I hang my [A]head and [E]cry.`
+            },
+            {
+                title: "John Henry",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G]John Henry was a [D]steel-drivin' man,
+[D]Died with a hammer in his [G]hand,
+[G]John Henry was a [D]steel-drivin' man,
+[D]Died with a hammer in his [G]hand.
+
+[G]John Henry said to his [D]captain,
+[D]"A man ain't nothin' but a [G]man,
+[G]Before I'll let that steam drill beat me [D]down,
+[D]I'll die with a hammer in my [G]hand."`
+            },
+            {
+                title: "Nine Pound Hammer",
+                artist: "Merle Travis",
+                key: "F",
+                capo: null,
+                format: "inline",
+                content: `[F]This nine pound hammer,
+[B]It's a little too [F]heavy,
+[F]It's a little too heavy,
+[B]For my [F]size, baby,
+[F]For my [B]size.
+
+[F]I'm goin' on the mountain,
+[B]To see my [F]baby,
+[F]But I ain't comin' back,
+[B]I ain't comin' [F]back,
+[F]I ain't comin' [B]back.`
+            },
+            {
+                title: "Go Down Moses",
+                artist: "Traditional Spiritual",
+                key: "Gm",
+                capo: null,
+                format: "inline",
+                content: `[Gm]When Israel was in Egypt's [D7]land,
+[Cm]Let my people [Gm]go,
+[Gm]Oppressed so hard they could not [D7]stand,
+[Cm]Let my people [Gm]go.
+
+[Gm]Go down, [D7]Moses,
+[Cm]Way down in Egypt's [Gm]land,
+[Gm]Tell old [D7]Pharaoh,
+[Cm]Let my people [Gm]go.`
+            },
+            {
+                title: "Swing Low Sweet Chariot",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G]Swing low, sweet [C]chariot,
+[D7]Comin' for to carry me [G]home,
+[G]Swing low, sweet [C]chariot,
+[D7]Comin' for to carry me [G]home.
+
+[G]I looked over Jordan, and [C]what did I see,
+[D7]Comin' for to carry me [G]home,
+[G]A band of angels [C]comin' after me,
+[D7]Comin' for to carry me [G]home.`
+            },
+            {
+                title: "This Train",
+                artist: "Traditional",
+                key: "C",
+                capo: null,
+                format: "inline",
+                content: `[C]This train is bound for [G]glory, this [F]train,
+[C]This train is bound for [G]glory, this [F]train,
+[C]This train is bound for [G]glory,
+[F]Don't carry nothing but the [C]righteous and the [G]holy,
+[F]This [C]train.`
+            },
+            {
+                title: "When I Lay My Burden Down",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G]Glory, glory, [C]hallelujah,
+[D7]When I lay my burden [G]down,
+[G]Glory, glory, [C]hallelujah,
+[D7]When I lay my burden [G]down.`
+            },
+            {
+                title: "Worried Man Blues",
+                artist: "Traditional",
+                key: "A",
+                capo: null,
+                format: "inline",
+                content: `[A]It takes a worried man to sing a worried song,
+[D]It takes a worried man to sing a worried song,
+[E]It takes a worried man to sing a worried song,
+I'm [A]worried now, but I won't be worried long.`
+            },
+            {
+                title: "Little Maggie",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G]Yonder comes little [F]Maggie,
+[D7]With a dram glass in her [G]hand,
+[G]She's running round [F]courting,
+[D7]With some other [G]man.`
+            },
+            {
+                title: "Shady Grove",
+                artist: "Traditional",
+                key: "Dm",
+                capo: null,
+                format: "inline",
+                content: `[Dm]Cheeks as red a [C]round as a [Dm] blooming rose,
+[F]Eyes of the [G] darkest [Dm] brown,
+[Dm]You are the [C]darling [Dm] of my heart,
+[F]Stay till the [G]sun goes [Dm]down.
+
+[Dm]Shady Grove, my [C]love,
+[Dm]Shady Grove, I [F]know,
+[Dm]Shady Grove, my [C]love,
+[F]Bound for the [G]shady [Dm]grove.`
+            },
+            {
+                title: "Spike Driver Blues",
+                artist: "Mississippi John Hurt",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] This old hammer killed John Henry
+[C] Killed John Henry, [G] killed John Henry
+[G] This old hammer killed John Henry
+[D7] Killed John Henry, [G] killed John Henry
+
+[G] This old hammer ain't done nothin'
+[C] Ain't done nothin', [G] ain't done nothin'
+[G] This old hammer ain't done nothin'
+[D7] Ain't done nothin', [G] ain't done nothin'`
+            },
+            {
+                title: "Make Me a Pallet on the Floor",
+                artist: "Traditional",
+                key: "C",
+                capo: null,
+                format: "inline",
+                content: `[C] Make me a pallet on the floor
+[G7] Make me a pallet on the floor
+[C] Make me a pallet on the [F] floor
+[C] Make me a pallet on the [G7] floor
+[C] Make me a [G7] pallet on the [C] floor`
+            },
+            {
+                title: "Sitting on Top of the World",
+                artist: "Traditional",
+                key: "G",
+                capo: "2nd fret",
+                format: "riseup",
+                content: `        G              C              G
+'Twas in the spring one sunny day,
+          C                   G
+My good girl left me, she went away.
+    Em                    G
+And now she's gone but I don't worry,
+     G       D7       G
+'Cause I'm sitting on top of the world.`
+            },
+            {
+                title: "Match Box Blues",
+                artist: "Blind Lemon Jefferson",
+                key: "E",
+                capo: null,
+                format: "inline",
+                content: `[E] I'm sittin' here wonderin', would a match box hold my clothes
+[A7] I'm sittin' here wonderin', would a match box hold my clothes
+[B7] I ain't got so many matches, but I got so far to [E] go`
+            },
+            {
+                title: "How Long Blues",
+                artist: "Leroy Carr",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] How long, baby, how long has that evening train been gone?
+[D7] How long, baby, how long has that evening train been gone?
+[C] Well, it's been so long, [D7] I can't tell you how long it's [G] been.`
+            },
+            {
+                title: "Cocaine Blues",
+                artist: "Rev. Gary Davis",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Early one mornin', 'fore the sun did shine
+[D7] I was walkin' down the street, not [G] feelin' so fine
+[C] Cocaine run all [G] around my brain
+[D7] Oh, [G] cocaine.`
+            },
+            {
+                title: "Freight Train",
+                artist: "Elizabeth Cotten",
+                key: "C",
+                capo: null,
+                format: "inline",
+                content: `[C] Freight train, freight train, run so fast
+[G] Freight train, freight train, run so fast
+[C] Please don't tell what [F] train I'm on
+[C] So they won't [G7] know what route I've [C] gone.`
+            },
+            {
+                title: "Shake Sugaree",
+                artist: "Elizabeth Cotten",
+                key: "E",
+                capo: null,
+                format: "inline",
+                content: `[E] I've got a secret, I shouldn't tell
+[E7] I'm gonna go to heaven in a split-pea shell.
+[A] Lordie me, didn't we shake sugaree.
+[B7] Everything I got, down in [E] pawn.`
+            },
+            {
+                title: "Deep Elem Blues",
+                artist: "Traditional",
+                key: "E",
+                capo: null,
+                format: "inline",
+                content: `[E] When you go down to Deep Elem,
+[A] When you go down to Deep Elem,
+[B7] When you go down to Deep Elem,
+[E] Keep your money in your shoes.`
+            },
+            {
+                title: "Stagolee",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Stagolee was a bad man, [C] everybody knows
+[G] He spent one hundred dollars for [D7] one suit of clothes.
+[G] He was a bad man, that [C] mean old [G] Stagolee.`
+            },
+            {
+                title: "Delia",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Delia's gone, one more round, [C] Delia's gone
+[G] Delia's gone, one more round, [D7] Delia's gone
+[G] Delia's gone, one more [C] round, Delia's [G] gone.`
+            },
+            {
+                title: "Frankie and Albert",
+                artist: "Traditional",
+                key: "D",
+                capo: null,
+                format: "inline",
+                content: `[D] Frankie was a good girl, everybody [G] knows
+[D] She paid one hundred dollars for [A7] Albert's suit of clothes.
+[D] He was her man, but he [A7] done her [D] wrong.`
+            },
+            {
+                title: "Tom Dooley",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Hang down your head, Tom Dooley
+[D7] Hang down your head and cry
+[G] Hang down your head, Tom [C] Dooley
+[G] Poor boy, you're [D7] bound to [G] die.`
+            },
+            {
+                title: "Pretty Polly",
+                artist: "Traditional",
+                key: "Dm",
+                capo: null,
+                format: "inline",
+                content: `[Dm] Oh Polly, Pretty Polly, would you take me un-[C] true?
+[F] Polly, Pretty Polly, would you take me un-[G] true?
+[Dm] Polly, Pretty Polly, I'm [C] afraid of [Dm] you.`
+            },
+            {
+                title: "In the Pines",
+                artist: "Traditional",
+                key: "Am",
+                capo: null,
+                format: "inline",
+                content: `[Am] In the pines, in the pines, where the sun never shines
+[E] I would shiver the whole night [Am] through.
+
+[Am] My girl, my girl, don't lie to me
+[E] Tell me where did you sleep last [Am] night.`
+            },
+            {
+                title: "I Am a Man of Constant Sorrow",
+                artist: "Traditional",
+                key: "A",
+                capo: null,
+                format: "inline",
+                content: `[A] I am a man of constant sorrow
+[D] I've seen trouble all my [A] days
+[E] I bid farewell to old Kentucky
+[A] The place where I was born and [D] raised.`
+            },
+            {
+                title: "Will the Circle Be Unbroken",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "riseup",
+                content: `        G                G
+Will the circle be unbroken
+       C        C      G     G
+By and by Lord, by and by
+          G     G       G       G
+There's a better home a-waiting
+       G         D      G      G
+In the sky Lord, in the sky.`
+            },
+            {
+                title: "Amazing Grace",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "riseup",
+                content: `      G         G        G        G
+Amazing grace, how sweet the sound
+    C         C         G       G
+That saved a wretch like me.
+      G         G         G       G
+I once was lost, but now am found
+     G         D7        G       G
+Was blind, but now I see.`
+            },
+            {
+                title: "Keep Your Lamp Trimmed and Burning",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Keep your lamp trimmed and burning
+[C] Keep your lamp trimmed and [G] burning
+[G] Keep your lamp trimmed and burning
+[D7] See what the Lord has [G] done.`
+            },
+            {
+                title: "I'll Fly Away",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Some glad morning when this life is o'er
+[C] I'll fly a-[G] way
+[G] To a home on God's celestial shore
+[D7] I'll fly a-[G] way.`
+            },
+            {
+                title: "Cluck Old Hen",
+                artist: "Traditional",
+                key: "D",
+                capo: null,
+                format: "inline",
+                content: `[D] Cluck old hen, cluck and sing
+[C] Ain't laid an egg since late last [G] spring
+[D] Cluck old hen, cluck and sing
+[D] Ain't laid an egg since late last [D] spring.`
+            },
+            {
+                title: "Cripple Creek",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] Goin' up Cripple Creek, goin' in a run
+[C] Goin' up Cripple Creek, goin' in a [G] run
+[G] Goin' up Cripple Creek, goin' in a run
+[D] Goin' up Cripple Creek, goin' in a [G] run.`
+            },
+            {
+                title: "Old Joe Clark",
+                artist: "Traditional",
+                key: "A",
+                capo: null,
+                format: "inline",
+                content: `[A] Old Joe Clark's a fine old man
+[D] Tell you the reason [A] why
+[A] He courted them all and he [E7] married three
+[A] And still he wouldn't [D] die.`
+            },
+            {
+                title: "Red Rocking Chair",
+                artist: "Traditional",
+                key: "G",
+                capo: null,
+                format: "inline",
+                content: `[G] You ain't no good, you can't be trusted
+[C] You ain't no good, you can't be [G] trusted
+[G] You ain't no good, you can't be trusted
+[D7] You ain't no good, you can't be [G] trusted.`
+            }
+        ];
+
+        // ========================
+        // RENDER INDEX
+        // ========================
+        function renderIndex() {
+            const grid = document.getElementById('songGrid');
+            grid.innerHTML = songs.map((song, i) => `
+                <div class="song-card" onclick="openSong(${i})">
+                    <div class="title">${song.title}</div>
+                    <div class="meta">${song.artist}${song.capo ? ` | Capo: ${song.capo}` : ''}</div>
+                    <span class="key">${song.key}</span>
+                </div>
+            `).join('');
+        }
+
+        // ========================
+        // TELEPROMPTER STATE
+        // ========================
+        let scrollSpeed = 5;
+        let isPlaying = false;
+        let scrollPos = 0;
+        let animationId = null;
+        let currentFontSize = 3; // rem
+
+        function openSong(index) {
+            const song = songs[index];
+            
+            document.getElementById('index').style.display = 'none';
+            document.getElementById('teleprompter').classList.add('active');
+            
+            // Render song info
+            document.getElementById('songInfo').innerHTML = `
+                <h2>${song.title}</h2>
+                <div class="subtitle">${song.artist}${song.capo ? ` | Capo: ${song.capo}` : ''} | Key: ${song.key}</div>
+            `;
+            
+            // Parse and render content
+            const content = parseSongContent(song.content, song.format);
+            document.getElementById('scrollContent').innerHTML = content;
+            document.getElementById('scrollContent').style.fontSize = currentFontSize + 'rem';
+            
+            resetScroll();
+            updateSpeedDisplay();
+        }
+        
+        function parseSongContent(text, format) {
+            if (format === 'riseup') {
+                return parseRiseUpFormat(text);
+            } else {
+                return parseInlineFormat(text);
+            }
+        }
+        
+        function parseRiseUpFormat(text) {
+            const lines = text.split('\n');
+            let result = '';
+            let chordLine = '';
+            let lyricLine = '';
+            let inChordBlock = false;
+            
+            for (let line of lines) {
+                // Section labels like [CHORUS]
+                if (line.trim().startsWith('[') && line.trim().endsWith(']')) {
+                    if (chordLine || lyricLine) {
+                        result += renderChordLyricPair(chordLine, lyricLine);
+                        chordLine = '';
+                        lyricLine = '';
+                    }
+                    result += `<span class="section-label">${escapeHtml(line.trim().slice(1, -1))}</span>\n`;
+                    continue;
+                }
+                
+                // Detect if line is mostly chords (short, uppercase, contains chord chars)
+                const isChordLine = isMostlyChords(line);
+                
+                if (isChordLine && !inChordBlock) {
+                    chordLine = line;
+                    inChordBlock = true;
+                } else if (isChordLine && inChordBlock) {
+                    // Previous was chord, this is also chord - flush previous pair
+                    result += renderChordLyricPair(chordLine, lyricLine);
+                    chordLine = line;
+                    lyricLine = '';
+                } else if (!isChordLine && inChordBlock) {
+                    lyricLine = line;
+                    result += renderChordLyricPair(chordLine, lyricLine);
+                    chordLine = '';
+                    lyricLine = '';
+                    inChordBlock = false;
+                } else if (!isChordLine && !inChordBlock) {
+                    // Standalone lyric line
+                    result += `<span class="lyric-line">${escapeHtml(line)}</span>\n`;
+                }
+            }
+            
+            // Flush remaining
+            if (chordLine || lyricLine) {
+                result += renderChordLyricPair(chordLine, lyricLine);
+            }
+            
+            return result;
+        }
+        
+        function isMostlyChords(line) {
+            const trimmed = line.trim();
+            if (!trimmed) return false;
+            // Chord lines are typically shorter and contain chord symbols
+            const tokens = trimmed.split(/\s+/).filter(t => t);
+            if (tokens.length === 0) return false;
+            const chordMatches = tokens.filter(t => /^[A-G][#b]?m?(aj|dim|aug|sus|add|7|9|11|13)?[0-9]*(\/[A-G][#b]?)?$/.test(t)).length;
+            return chordMatches / tokens.length > 0.5 || tokens.length < 4 && chordMatches > 0;
+        }
+        
+        function renderChordLyricPair(chordLine, lyricLine) {
+            if (!chordLine && !lyricLine) return '';
+            if (!chordLine) return `<span class="lyric-line">${escapeHtml(lyricLine)}</span>\n`;
+            if (!lyricLine) return `<span class="chord-line">${escapeHtml(chordLine)}</span>\n`;
+            
+            // For teleprompter: show chord line above lyric line, preserving spacing
+            return `<span class="chord-line">${escapeHtml(chordLine)}</span>\n<span class="lyric-line">${escapeHtml(lyricLine)}</span>\n`;
+        }
+        
+        function parseInlineFormat(text) {
+            // Convert [Chord]lyrics to chord+lyric display
+            const chordRegex = /\[([A-G][#b]?m?(?:aj|dim|aug|sus|add)?[0-9]*(?:\/[A-G][#b]?)?)\]/g;
+            
+            let result = '';
+            const lines = text.split('\n');
+            
+            for (const line of lines) {
+                if (line.trim().startsWith('[') && line.trim().endsWith(']') && !line.includes(' ')) {
+                    result += `<span class="section-label">${escapeHtml(line.trim().slice(1, -1))}</span>\n`;
+                    continue;
+                }
+                
+                let processed = line;
+                // Replace [Chord] with styled chord
+                processed = processed.replace(chordRegex, '<span class="chord-inline">$1</span>');
+                result += `<span class="lyric-line">${processed}</span>\n`;
+            }
+            
+            return result;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showIndex() {
+            stopScroll();
+            document.getElementById('teleprompter').classList.remove('active');
+            document.getElementById('index').style.display = 'block';
+        }
+
+        // ========================
+        // SCROLLING CONTROLS
+        // ========================
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('playBtn').textContent = isPlaying ? 'PAUSE' : 'PLAY';
+            
+            if (isPlaying) {
+                startScroll();
+            } else {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function startScroll() {
+            const content = document.getElementById('scrollContent');
+            const container = document.getElementById('scrollContainer');
+            
+            function step() {
+                if (!isPlaying) return;
+                
+                scrollPos += scrollSpeed * 0.5;
+                const maxScroll = content.offsetHeight - container.offsetHeight + 200;
+                
+                if (scrollPos >= maxScroll) {
+                    scrollPos = maxScroll;
+                    isPlaying = false;
+                    document.getElementById('playBtn').textContent = 'PLAY';
+                } else {
+                    content.style.transform = `translateY(-${scrollPos}px)`;
+                    animationId = requestAnimationFrame(step);
+                }
+            }
+            
+            animationId = requestAnimationFrame(step);
+        }
+        
+        function stopScroll() {
+            isPlaying = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('playBtn').textContent = 'PLAY';
+        }
+        
+        function adjustSpeed(delta) {
+            scrollSpeed = Math.max(1, Math.min(20, scrollSpeed + delta));
+            updateSpeedDisplay();
+        }
+        
+        function updateSpeedDisplay() {
+            document.getElementById('speedDisplay').textContent = scrollSpeed;
+        }
+        
+        function resetScroll() {
+            scrollPos = 0;
+            document.getElementById('scrollContent').style.transform = 'translateY(0)';
+        }
+        
+        function changeSize(delta) {
+            currentFontSize = Math.max(1.5, Math.min(6, currentFontSize + delta));
+            document.getElementById('scrollContent').style.fontSize = currentFontSize + 'rem';
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('teleprompter').classList.contains('active')) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            } else if (e.code === 'ArrowUp') {
+                scrollPos = Math.max(0, scrollPos - 50);
+                document.getElementById('scrollContent').style.transform = `translateY(-${scrollPos}px)`;
+            } else if (e.code === 'ArrowDown') {
+                scrollPos += 50;
+                document.getElementById('scrollContent').style.transform = `translateY(-${scrollPos}px)`;
+            } else if (e.code === 'Escape') {
+                showIndex();
+            }
+        });
+
+        // Initialize
+        renderIndex();
+    </script>
+</body>
+</html>
